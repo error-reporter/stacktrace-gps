@@ -8,6 +8,7 @@ var path = require('path');
 var runSequence = require('run-sequence');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
+var pump = require('pump');
 var webpack = require('webpack');
 
 var polyfills = [
@@ -71,19 +72,23 @@ gulp.task('copy', function() {
 
 gulp.task('dist', ['copy', 'webpack-source-consumer'], function() {
     // Build with ES6Promise and other polyfills
-    gulp.src(polyfills.concat(dependencies.concat(source)))
-        .pipe(sourcemaps.init())
-        .pipe(concat(source.replace('.js', '-with-polyfills.min.js')))
-        .pipe(uglify())
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('dist'));
+    pump([
+      gulp.src(polyfills.concat(dependencies.concat(source))),
+      sourcemaps.init(),
+      concat(source.replace('.js', '-with-polyfills.min.js')),
+      uglify(),
+      sourcemaps.write('./'),
+      gulp.dest('dist'),
+    ]);
 
-    return gulp.src(dependencies.concat(source))
-        .pipe(sourcemaps.init())
-        .pipe(concat(source.replace('.js', '.min.js')))
-        .pipe(uglify())
-        .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('dist'));
+    return pump([
+      gulp.src(dependencies.concat(source)),
+      sourcemaps.init(),
+      concat(source.replace('.js', '.min.js')),
+      uglify(),
+      sourcemaps.write('./'),
+      gulp.dest('dist'),
+    ]);
 });
 
 gulp.task('clean', del.bind(null, ['build', 'coverage', 'dist']));
